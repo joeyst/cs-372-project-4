@@ -9,6 +9,46 @@ def usage():
 
 packet_buffer = b''
 
+# helper function
+def get_length_from_first_two_bytes(packet, verbose=False):
+  """
+  Returns the integer value of the first two bytes of a bytestring. 
+  """
+  # getting first two bytes, which represent length of the following word, as a bytestring
+  length_byteform = packet[0:2]
+  if verbose:
+    print("length_byteform:", length_byteform)
+
+  # converting the first two bytes to the length of the following word in integer form 
+  length_integer = int.from_bytes(length_byteform, 'big')
+  if verbose:
+    print("length_integer:", length_integer)
+  return length_integer
+
+# helper function 
+def get_word_from_length(packet, length, verbose=False):
+  """
+  Gets word in byteform from packet, offset by two to account for first two bytes representing 
+  the word length
+  """
+  word_byteform = packet[2:2+length]
+  if verbose:
+    print("word_byteform:", word_byteform)
+  
+  return word_byteform
+
+def has_enough_data_to_make_packet():
+  global packet_buffer
+  length_of_collected_data = len(packet_buffer)
+  desired_length = get_length_from_first_two_bytes(packet_buffer)
+  return desired_length + 2 <= length_of_collected_data
+
+def pop_word_packet(length):
+  global packet_buffer
+  curr_packet = packet_buffer[0:length]
+  packet_buffer = packet_buffer[length:]
+  return curr_packet
+
 def get_next_word_packet(s):
     """
     Return the next word packet from the stream.
@@ -22,8 +62,25 @@ def get_next_word_packet(s):
 
     global packet_buffer
 
-    # TODO -- Write me!
+    # looping until buffer finds something to return (either a word, or `None`)
+    while True:
+      # receive packet
+      d = s.recv(5)
 
+      # append data to buffer
+      packet_buffer += d
+
+      # break if buffer (which just had the received data appended to it) is empty
+      if (len(packet_buffer) == 0):
+        return None
+
+      # check of buffer has enough data to make a packet for its length
+      if has_enough_data_to_make_packet():
+        # get length of the word (that follows the first two bytes)
+        curr_length = get_length_from_first_two_bytes(packet_buffer)
+        # pop the word packet off of the global buffer
+        curr_packet = pop_word_packet(curr_length + 2)
+        return curr_packet 
 
 def extract_word(word_packet):
     """
@@ -35,7 +92,9 @@ def extract_word(word_packet):
     Returns the word decoded as a string.
     """
 
-    # TODO -- Write me!
+    length_of_word = get_length_from_first_two_bytes(word_packet)
+    word = get_word_from_length(word_packet, length_of_word)
+    return word.decode()
 
 # Do not modify:
 
