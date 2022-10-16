@@ -74,13 +74,19 @@ def get_next_word_packet(s):
       if (len(packet_buffer) == 0):
         return None
 
-      # check of buffer has enough data to make a packet for its length
-      if has_enough_data_to_make_packet():
-        # get length of the word (that follows the first two bytes)
-        curr_length = get_length_from_first_two_bytes(packet_buffer)
-        # pop the word packet off of the global buffer
-        curr_packet = pop_word_packet(curr_length + 2)
-        return curr_packet 
+      # check that buffer has enough bytes (2 bytes) to calculate word length 
+      if (len(packet_buffer) >= 2):
+        # check of buffer has enough data to make a packet for its length
+        if has_enough_data_to_make_packet():
+          # get length of the word (that follows the first two bytes)
+          curr_length = get_length_from_first_two_bytes(packet_buffer)
+          # pop the word packet off of the global buffer
+          curr_packet = pop_word_packet(curr_length + 2)
+          return curr_packet 
+      
+      # check that there isn't leftover packet data to get caught in infinite loop
+      if (len(packet_buffer) != 0 and len(d) == 0):
+        return None
 
 def extract_word(word_packet):
     """
