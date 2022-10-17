@@ -86,6 +86,7 @@ def get_next_word_packet(s):
       
       # check that there isn't leftover packet data to get caught in infinite loop
       if (len(packet_buffer) != 0 and len(d) == 0):
+        packet_buffer = b''
         return None
 
 def extract_word(word_packet):
